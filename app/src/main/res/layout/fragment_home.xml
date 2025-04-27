@@ -5,6 +5,23 @@
     android:orientation="vertical"
     android:background="#FFFFFF">
 
+    <!-- Header dengan Gradient Background -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:background="@drawable/gradient_header"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="My Notes"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+
     <!-- SearchView -->
     <androidx.appcompat.widget.SearchView
         android:id="@+id/search_view"

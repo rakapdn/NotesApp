@@ -33,17 +33,24 @@ android {
 }
 
 dependencies {
+    // Android dan Material Components
     implementation(libs.appcompat)
-    implementation(libs.material)
+    implementation(libs.material) // Pastikan versi di gradle/libs.versions.toml cukup baru
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-    implementation(libs.firebase.database) // Firebase Realtime Database
-    implementation(libs.firebase.auth)     // Firebase Authentication
-    implementation("androidx.recyclerview:recyclerview:1.3.2") // RecyclerView
-    implementation("androidx.cardview:cardview:1.0.0") // CardView untuk kartu profil
-    implementation("com.github.bumptech.glide:glide:4.16.0") // Glide untuk memuat foto profil
-    implementation("com.google.firebase:firebase-storage:20.3.0") // Firebase Storage untuk menyimpan foto
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.cardview:cardview:1.0.0")
 
+    // Firebase dengan BOM untuk menyelaraskan versi
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0")) // Versi terbaru per April 2025
+    implementation("com.google.firebase:firebase-database")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-storage")
+
+    // Glide untuk memuat foto profil
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
