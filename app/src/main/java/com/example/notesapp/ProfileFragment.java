@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AnimationUtils;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,13 +32,18 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class ProfileFragment extends Fragment {
 
-    private TextView nameTextView, emailTextView, totalNotesTextView, joinedDateTextView;
+    private TextView nameTextView, emailTextView, totalNotesTextView, joinedDateTextView, lastNoteTextView;
     private ImageView profileImage;
+    private Button logoutButton;
     private FirebaseAuth mAuth;
     private DatabaseReference database;
     private StorageReference storageReference;
@@ -63,7 +70,12 @@ public class ProfileFragment extends Fragment {
         emailTextView = view.findViewById(R.id.email_text_view);
         totalNotesTextView = view.findViewById(R.id.total_notes_text_view);
         joinedDateTextView = view.findViewById(R.id.joined_date_text_view);
+        lastNoteTextView = view.findViewById(R.id.last_note_text_view);
         profileImage = view.findViewById(R.id.profile_image);
+        logoutButton = view.findViewById(R.id.logout_button);
+
+        // Tambahkan animasi fade-in
+        view.setAnimation(AnimationUtils.loadAnimation(getContext(), android.R.anim.fade_in));
 
         // Inisialisasi Firebase
         mAuth = FirebaseAuth.getInstance();
@@ -79,11 +91,14 @@ public class ProfileFragment extends Fragment {
         // Tampilkan informasi pengguna
         displayUserInfo(currentUser);
 
-        // Hitung jumlah catatan
-        loadNotesCount();
+        // Hitung jumlah catatan dan catatan terakhir
+        loadNotesData();
 
         // Setup listener untuk foto profil
         profileImage.setOnClickListener(v -> showProfilePhotoOptions());
+
+        // Setup listener untuk tombol logout
+        logoutButton.setOnClickListener(v -> logout());
 
         return view;
     }
@@ -126,17 +141,39 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    private void loadNotesCount() {
+    private void loadNotesData() {
         database.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
+                // Hitung jumlah catatan
                 long totalNotes = snapshot.getChildrenCount();
                 totalNotesTextView.setText(String.valueOf(totalNotes));
+
+                // Cari catatan terakhir
+                List<AddNoteFragment.Note> notes = new ArrayList<>();
+                for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+                    AddNoteFragment.Note note = dataSnapshot.getValue(AddNoteFragment.Note.class);
+                    if (note != null) {
+                        notes.add(note);
+                    }
+                }
+
+                if (!notes.isEmpty()) {
+                    // Urutkan berdasarkan timestamp (terbaru dulu)
+                    Collections.sort(notes, (n1, n2) -> Long.compare(n2.timestamp, n1.timestamp));
+                    AddNoteFragment.Note lastNote = notes.get(0);
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+                    String lastNoteText = lastNote.title + "\n" + sdf.format(new Date(lastNote.timestamp));
+                    lastNoteTextView.setText(lastNoteText);
+                } else {
+                    lastNoteTextView.setText("N/A");
+                }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 totalNotesTextView.setText("Error");
+                lastNoteTextView.setText("Error");
             }
         });
     }
@@ -254,5 +291,23 @@ public class ProfileFragment extends Fragment {
                 .addOnFailureListener(e -> {
                     Toast.makeText(getContext(), "Failed to delete photo: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private void logout() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Logout")
+                .setMessage("Are you sure you want to logout?")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    mAuth.signOut();
+                    Toast.makeText(getContext(), "Logged out successfully", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(getActivity(), LoginActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    if (getActivity() != null) {
+                        getActivity().finish();
+                    }
+                })
+                .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 }
